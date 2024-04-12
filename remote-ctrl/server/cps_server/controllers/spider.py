@@ -296,17 +296,17 @@ class SpiderController(ControllerBase):
 
         all_positions = all_ram_values["PRESENT_POSITION"]
         all_offsets   = all_eeprom_values["HOMING_OFFSET"]
-        all_min_limits = all_eeprom_values["MIN_POSITION_LIMIT"]
-        all_max_limits = all_eeprom_values["MAX_POSITION_LIMIT"]
-        min_pos_limits  = 12*[0]
-        max_pos_limits  = 12*[0]
+        #all_min_limits = all_eeprom_values["MIN_POSITION_LIMIT"]
+        #all_max_limits = all_eeprom_values["MAX_POSITION_LIMIT"]
+        #min_pos_limits  = 12*[0]
+        #max_pos_limits  = 12*[0]
         new_offsets     = 12*[0]
         for i, name in enumerate(SERVO_ORDER):
             diff = all_positions[i] - 2048
             new_offsets[i] = all_offsets[i] - diff
-            min_pos_limits[i] = max(all_min_limits[i] - diff, 0)
-            max_pos_limits[i] = min(all_max_limits[i] - diff, 4095)
+            #min_pos_limits[i] = max(all_min_limits[i] - diff, 0)
+            #max_pos_limits[i] = min(all_max_limits[i] - diff, 4095)
         self.write_all_servo_registers("HOMING_OFFSET", new_offsets)
-        self.write_all_servo_registers("MIN_POSITION_LIMIT", min_pos_limits)
-        self.write_all_servo_registers("MAX_POSITION_LIMIT", max_pos_limits)
+        #self.write_all_servo_registers("MIN_POSITION_LIMIT", min_pos_limits)
+        #self.write_all_servo_registers("MAX_POSITION_LIMIT", max_pos_limits)
         return dict()
