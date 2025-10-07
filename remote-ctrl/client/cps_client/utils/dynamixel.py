@@ -20,6 +20,16 @@ zero_shift_dics = {
     "NO_KEY": 0.0,
 }
 
+# FOR THE NEW SPIDER
+zero_shift_dics["BR_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["BR_ELBOW"] = 2.35
+zero_shift_dics["FR_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["FR_ELBOW"] = 2.35
+zero_shift_dics["FL_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["FL_ELBOW"] = 2.35
+zero_shift_dics["BL_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["BL_ELBOW"] = 2.35
+
 #zero_shift_dics = {
 #    #"BR_OUTER_SHOULDER": -0.202,
 #    #"FR_OUTER_SHOULDER": -0.202,
@@ -42,8 +52,12 @@ zero_shift_dics = {
 #}
 
 POSITIVE_JOINTS = {
-    "FR_ELBOW",
-    "BL_ELBOW",
+    "BR_OUTER_SHOULDER",
+    "FR_OUTER_SHOULDER",
+    "FL_OUTER_SHOULDER",
+    "BL_OUTER_SHOULDER",
+    #"FR_ELBOW",
+    #"BL_ELBOW",
 }
 
 def dnx_to_mujoco(angle, motor_key):

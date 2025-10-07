@@ -13,6 +13,19 @@ from ..gui_types import Refresher
 
 from ...import slipp, utils
 
+# Standup Position
+STANDUP_RADIAN_POS = [
+        [0.0, -0.95, 2.35, 0.0, -0.95, 2.35, 0.0, -0.95, 2.35, 0.0, -0.95, 2.35],
+        [0.0, -0.00, 1.50, 0.0, -0.00, 1.50, 0.0, -0.00, 1.50, 0.0, -0.00, 1.50],
+        [0.0, -0.10, 0.90, 0.0, -0.10, 0.90, 0.0, -0.10, 0.90, 0.0, -0.10, 0.90],
+        [0.0, -0.40, 1.05, 0.0, -0.40, 1.05, 0.0, -0.40, 1.05, 0.0, -0.40, 1.05],
+        [0.0, -0.65, 1.25, 0.0, -0.65, 1.25, 0.0, -0.65, 1.25, 0.0, -0.65, 1.25],
+        [0.0, -0.65, 1.25, 0.0,  0.40, 0.00, 0.0,  0.20, 0.00, 0.0, -0.65, 1.25],
+        [0.0,  0.40, 0.00, 0.0,  0.20, 0.00, 0.0,  0.20, 0.00, 0.0,  0.40, 0.00],
+        [0.0,  0.20, 0.00, 0.0,  0.20, 0.00, 0.0,  0.20, 0.00, 0.0,  0.20, 0.00],
+]
+
+
 
 # Testing a standup position
 STANDUP_DEGREE_POS = [
@@ -232,9 +245,9 @@ class ControlBox(Refresher, Gtk.Box):
         COMMANDS = [
             ("Stand Up", self.on_command_stand_up),
             ("Lie Down From Stand", self.on_command_liedown_from_stand),
-            ("Trot", self.on_command_trot),
-            ("Creep", self.on_command_creep),
-            ("Trot (v2)", self.on_command_trot_johnmod),
+            #("Trot", self.on_command_trot),
+            #("Creep", self.on_command_creep),
+            #("Trot (v2)", self.on_command_trot_johnmod),
             ("Lie Down", self.on_command_liedown),
             ("Stand", self.on_command_stand),
         ]
@@ -280,21 +293,21 @@ class ControlBox(Refresher, Gtk.Box):
 
     def on_command_stand_up(self, btn):
         # From lying down, stand up
-        self._set_command_in_degrees(STANDUP_DEGREE_POS)
+        self._set_command_in_radians(STANDUP_RADIAN_POS)
 
     def on_command_liedown_from_stand(self, btn):
         # From lying down, stand up
-        self._set_command_in_degrees(
-            list(reversed(STANDUP_DEGREE_POS)) + [[0.0]*12]
+        self._set_command_in_radians(
+            list(reversed(STANDUP_RADIAN_POS))
         )
 
     def on_command_liedown(self, btn):
         # Go to lying down position
-        self._set_command_in_degrees([[0.0]*12])
+        self._set_command_in_radians([STANDUP_RADIAN_POS[0]])
 
     def on_command_stand(self, btn):
         # Go to lying down position
-        self._set_command_in_degrees([STANDUP_DEGREE_POS[-1]])
+        self._set_command_in_radians([STANDUP_RADIAN_POS[-1]])
 
     def on_metric_toggle(self, chk):
         has_error = False
@@ -546,7 +559,8 @@ class ControlBox(Refresher, Gtk.Box):
         if len(self.command_queue) > 0:
             if self.command_received and self.telemetry_received:
                 pos = self.command_queue.popleft()
-                cmd_pkt = slipp.Packet("move_all_servos_steady", contents={"args": copy.copy(pos)})
+                #cmd_pkt = slipp.Packet("move_all_servos_steady", contents={"args": copy.copy(pos)})
+                cmd_pkt = slipp.Packet("move_all_servos", contents={"args": copy.copy(pos)})
                 tm_pkt = slipp.Packet("read_all_servos_RAM")
                 self.main_utils.client_send(
                     cmd_pkt,

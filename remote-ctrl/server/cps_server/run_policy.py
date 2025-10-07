@@ -26,9 +26,21 @@ zero_shift_dics = {
     "NO_KEY": 0.0,
 }
 
+# FOR THE NEW SPIDER
+zero_shift_dics["BR_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["BR_ELBOW"] = 2.35
+zero_shift_dics["FR_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["FR_ELBOW"] = 2.35
+zero_shift_dics["FL_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["FL_ELBOW"] = 2.35
+zero_shift_dics["BL_OUTER_SHOULDER"] = -0.95
+zero_shift_dics["BL_ELBOW"] = 2.35
+
 POSITIVE_JOINTS = {
-    "FR_ELBOW",
-    "BL_ELBOW",
+    "BR_OUTER_SHOULDER",
+    "FR_OUTER_SHOULDER",
+    "FL_OUTER_SHOULDER",
+    "BL_OUTER_SHOULDER",
 }
 
 FIXED_ANGLE = None
@@ -39,7 +51,7 @@ CONSTANT_ELBOW = None
 #ACTION_DELTA = 0.2
 #CONSTANT_ELBOW = 2.50
 
-N_STEPS = 4 * 4
+N_STEPS = 32
 
 def dnx_to_mujoco(angle, motor_key):
     if motor_key in POSITIVE_JOINTS:
@@ -266,7 +278,7 @@ def get_obs(ctrl : "SpiderController", state):
 
     return mujoco_obs
 
-def apply_action(ctrl : "SpiderController", action, state):
+def apply_action(ctrl : "SpiderController", action, state, steady=True):
     # Applies an action to the spider robot
 
     mj_action = action
@@ -280,8 +292,10 @@ def apply_action(ctrl : "SpiderController", action, state):
 
     add_to_trajectory(state, "action", {"mujoco": mj_action.tolist(), "raw": raw_action})
 
-    #ctrl.move_all_servos(*raw_action)
-    ctrl.move_all_servos_steady(*raw_action)
+    if steady:
+        ctrl.move_all_servos_steady(*raw_action)
+    else:
+        ctrl.move_all_servos(*raw_action)
 
 
 def step(ctrl, state, model):
@@ -328,18 +342,18 @@ def step(ctrl, state, model):
 
     # Apply action space clipping
     action_limits = np.array([
-        [-np.pi / 4, 0.15], # inner shoulder
-        [-1.3963, 1.5708],
-        [np.pi/4, 2.7925],
-        [-0.15,      np.pi / 4],
-        [-1.3963, 1.5708],
-        [np.pi/4, 2.7925],
-        [-np.pi / 4, 0.15],
-        [-1.3963, 1.5708],
-        [np.pi/4, 2.7925],
-        [-0.15,      np.pi / 4],
-        [-1.3963, 1.5708],
-        [np.pi/4, 2.7925],
+        [-np.pi/5, np.pi/5],
+        [-0.40,    0.40],
+        [0.0,      1.0],
+        [-np.pi/5, np.pi/5],
+        [-0.40,    0.40],
+        [0.0,      1.0],
+        [-np.pi/5, np.pi/5],
+        [-0.40,    0.40],
+        [0.0,      1.0],
+        [-np.pi/5, np.pi/5],
+        [-0.40,    0.40],
+        [0.0,      1.0],
     ], dtype=np.float32)
     action = np.clip(action, action_limits[:,0], action_limits[:,1])
 
@@ -428,52 +442,23 @@ def run_policy(file):
     ctrl.enable_torque()
     time.sleep(0.25)
 
+    STANDUP_RADIAN_POS = [
+        [0.0, -0.95, 2.35, 0.0, -0.95, 2.35, 0.0, -0.95, 2.35, 0.0, -0.95, 2.35],
+        [0.0, -0.00, 1.50, 0.0, -0.00, 1.50, 0.0, -0.00, 1.50, 0.0, -0.00, 1.50],
+        [0.0, -0.10, 0.90, 0.0, -0.10, 0.90, 0.0, -0.10, 0.90, 0.0, -0.10, 0.90],
+        [0.0, -0.40, 1.05, 0.0, -0.40, 1.05, 0.0, -0.40, 1.05, 0.0, -0.40, 1.05],
+        [0.0, -0.65, 1.25, 0.0, -0.65, 1.25, 0.0, -0.65, 1.25, 0.0, -0.65, 1.25],
+        [0.0, -0.65, 1.25, 0.0,  0.40, 0.00, 0.0,  0.20, 0.00, 0.0, -0.65, 1.25],
+        [0.0,  0.40, 0.00, 0.0,  0.20, 0.00, 0.0,  0.20, 0.00, 0.0,  0.40, 0.00],
+        [0.0,  0.20, 0.00, 0.0,  0.20, 0.00, 0.0,  0.20, 0.00, 0.0,  0.20, 0.00],
+    ]
+    STANDUP_ACTIONS = STANDUP_RADIAN_POS
+
     add_info(state, "Resetting legs")
-    apply_action(ctrl, np.zeros((12,)), state)
-    time.sleep(1.0)
-
-    ctrl.set_duration(500)
-    ctrl.set_acceleration(250)
-
+    apply_action(ctrl, np.array(STANDUP_ACTIONS[0]), state, steady=False)
     time.sleep(1.0)
 
     add_info(state, "Going into standup position")
-    STANDUP_ACTIONS = [
-        [   -0.52309,     1.3963, 0.00069025,
-             0.52309,     1.3963, 0.00063209,
-             0.52309,     1.3963, 0.00063209,
-            -0.52309,     1.3955, 0.00074842],
-        [   -0.52309,     1.3963,     2.2695,
-             0.52309,     1.3963,     2.2694,
-             0.52309,     1.3963,     2.2694,
-            -0.52309,     1.3955,     2.2695],
-        [   -0.52309,    0.70,     2.0946,
-             0.52309,    0.70,     2.0945,
-             0.52309,    0.70,     2.0945,
-            -0.52309,    0.70,     2.0946],
-        [   -0.52309,    0.70,     2.0946,
-             0.52309,     1.1339,     2.15,
-             0.52309,     1.1339,     2.15,
-            -0.52309,    0.70,     2.0946],
-        [   -0.52309,    0.70,     2.0946,
-             0.52309,    0.70,     2.15,
-             0.52309,    0.70,     2.15,
-            -0.52309,    0.70,     2.0946],
-        [   -0.52309,     1.1339,     2.15,
-             0.52309,    0.70,     2.15,
-             0.52309,    0.70,     2.15,
-            -0.52309,     1.1347,     2.15],
-        [   -0.52309,    0.70,     2.15,
-             0.52309,    0.70,     2.15,
-             0.52309,    0.70,     2.15,
-            -0.52309,    0.70,     2.15],
-        [
-                -0.40, 0.70, 2.15,
-                 0.40, 0.70, 2.15,
-                 0.40, 0.70, 2.15,
-                -0.40, 0.70, 2.15
-        ]
-    ]
     #stand_pos = [
     #    -0.40, 0.70, 2.15,
     #     0.40, 0.70, 2.15,
@@ -482,8 +467,11 @@ def run_policy(file):
     #]
     stand_pos = STANDUP_ACTIONS[-1]
     for action in STANDUP_ACTIONS:
-        apply_action(ctrl, np.array(action), state)
-        time.sleep(0.5)
+        apply_action(ctrl, np.array(action), state, steady=False)
+        time.sleep(0.5*2)
+
+    ctrl.set_duration(500)
+    ctrl.set_acceleration(250)
 
     add_info(state, "NOW STANDING")
     time.sleep(3.0)
@@ -509,18 +497,21 @@ def run_policy(file):
         #    print(f"{k}: {entry}")
 
     time.sleep(1.0)
-    for action in reversed(STANDUP_ACTIONS):
-        apply_action(ctrl, np.array(action), state)
-        time.sleep(0.5)
-    #time.sleep(1.0)
+    ctrl.set_duration(2000)
+    ctrl.set_acceleration(1000)
+    apply_action(ctrl, np.array(STANDUP_ACTIONS[-1]), state)
+    time.sleep(1.0)
+
+    time.sleep(1.0)
     ctrl.set_duration(1000)
     ctrl.set_acceleration(500)
-    #apply_action(ctrl, np.array(stand_pos), state)
-
+    for action in reversed(STANDUP_ACTIONS):
+        apply_action(ctrl, np.array(action), state)
+        time.sleep(0.5*2)
 
     time.sleep(2.0)
     add_info(state, "Resetting legs")
-    apply_action(ctrl, np.zeros((12,)), state)
+    apply_action(ctrl, np.array(STANDUP_ACTIONS[0]), state, steady=False)
     time.sleep(1.0)
 
     ctrl.disable_torque()

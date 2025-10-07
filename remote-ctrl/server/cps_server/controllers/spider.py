@@ -2,18 +2,18 @@ import numpy as np
 from .controllerbase import ControllerBase, register_command
 
 SERVO_INDEX_LOOKUP = {
-    "BR_INNER_SHOULDER": 1,
-    "BR_OUTER_SHOULDER": 2,
-    "FR_ELBOW":          3,
-    "FR_INNER_SHOULDER": 4,
-    "BR_ELBOW":          5,
-    "FR_OUTER_SHOULDER": 6,
+    "FL_OUTER_SHOULDER": 1,
+    "FL_ELBOW":          2,
+    "BR_INNER_SHOULDER": 3,
+    "FR_ELBOW":          4,
+    "FR_OUTER_SHOULDER": 5,
+    "FL_INNER_SHOULDER": 6,
     "BL_OUTER_SHOULDER": 7,
-    "FL_INNER_SHOULDER": 8,
-    "BL_INNER_SHOULDER": 9,
-    "FL_ELBOW":          10,
-    "FL_OUTER_SHOULDER": 11,
-    "BL_ELBOW":          12,
+    "BL_ELBOW":          8,
+    "FR_INNER_SHOULDER": 9,
+    "BL_INNER_SHOULDER": 10,
+    "BR_OUTER_SHOULDER": 11,
+    "BR_ELBOW":          12,
 }
 
 SERVO_ORDER = [
@@ -47,7 +47,7 @@ class SpiderController(ControllerBase):
         self.dev_dxl = dev_dxl
         self.dev_accel = dev_accel
         self.dxl_handler = DynamixelHandler(dev_dxl, baudrate=4_000_000)
-        self.accel_handler = Accelerometer(dev_accel, 0x68)
+        #self.accel_handler = Accelerometer(dev_accel, 0x68)
 
         self.duration = 1500
         self.acceleration = 600
@@ -105,17 +105,17 @@ class SpiderController(ControllerBase):
     @register_read()
     def read_accel(self):
         return [
-            self.accel_handler.read_accel_x(),
-            self.accel_handler.read_accel_y(),
-            self.accel_handler.read_accel_z()
+            0.0, #self.accel_handler.read_accel_x(),
+            0.0, #self.accel_handler.read_accel_y(),
+            0.0, #self.accel_handler.read_accel_z()
         ]
 
     @register_read()
     def read_gyro(self):
         return [
-            self.accel_handler.read_gyro_x(),
-            self.accel_handler.read_gyro_y(),
-            self.accel_handler.read_gyro_z()
+            0.0, #self.accel_handler.read_gyro_x(),
+            0.0, #self.accel_handler.read_gyro_y(),
+            0.0, #self.accel_handler.read_gyro_z()
         ]
 
     @register_write()
@@ -284,6 +284,33 @@ class SpiderController(ControllerBase):
     @register_write(argtypes=[str])
     def reboot_single_servo(self, name):
         self.dxl_handler.reboot_servos([SERVO_INDEX_LOOKUP[name]])
+        return dict()
+
+    @register_write(argtypes=[str])
+    def calibrate_servo(self, name):
+        """Recalibrates a single servo."""
+        i = [i for i, x in enumerate(SERVO_ORDER) if x == name][0]
+        all_ram_values = self.read_all_servos_RAM()
+        all_eeprom_values = self.read_all_servos_EEPROM()
+        if any(all_ram_values["TORQUE_ENABLE"]):
+            raise AttributeError("Cannot recalibrate torques with torque enabled")
+
+        all_positions = all_ram_values["PRESENT_POSITION"]
+        all_offsets   = all_eeprom_values["HOMING_OFFSET"]
+
+        pos = all_positions[i]
+        off = all_offsets[i]
+
+        internal_position = pos - off
+        new_pos = 2048
+
+        new_off = new_pos - internal_position
+
+        new_offset = new_off
+        #diff = all_positions[i] - 2048
+        #new_offset = all_offsets[i] - diff
+
+        self.write_single_servo_register("HOMING_OFFSET", name, new_offset)
         return dict()
 
     @register_write()

@@ -154,8 +154,9 @@ VALID_BAUDRATES = [
 ]
 
 class DynamixelHandler:
-    def __init__(self, dev="/dev/ttyUSB0", baudrate=57600, protocol_version=2.0):
+    def __init__(self, dev="/dev/ttyUSB0", baudrate=57600, protocol_version=2.0, n_read_retries=10):
         self.opened_port = False
+        self.n_read_retries = n_read_retries
         self.portHandler = dxl.PortHandler(dev)
 
         self.packetHandler = dxl.PacketHandler(protocol_version)
@@ -270,6 +271,24 @@ class DynamixelHandler:
         """
         Reads all control RAM parameters from all servos.
         """
+        attempts = 0
+        while True:
+            attempts += 1
+            ret = None
+            try:
+                ret = self._wrapped_sync_read_registers(ids, reg_start, reg_end)
+            except RuntimeError as e:
+                ret = None
+                if attempts >= self.n_read_retries:
+                    raise e
+
+            if ret is not None:
+                return ret
+
+    def _wrapped_sync_read_registers(self,
+                            ids : List[int],
+                            reg_start : Union[Register, str],
+                            reg_end : Union[Register, str]):
         if isinstance(reg_start, str):
             reg_start = REGISTER_LOOKUP[reg_start]
         if isinstance(reg_end, str):

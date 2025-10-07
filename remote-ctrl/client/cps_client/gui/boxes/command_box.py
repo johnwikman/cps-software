@@ -78,7 +78,7 @@ class CommandBox(Gtk.Box):
         self.cmdlist_lookup = dict()
         self.cmdlist_title = Gtk.Label(label="Commands")
         self.cmdlist_refresh_btn = Gtk.Button(label="Refresh List")
-        self.cmdlist_refresh_btn.set_size_request(200, 30)
+        self.cmdlist_refresh_btn.set_size_request(300, 30)
         self.cmdlist_refresh_btn.connect("clicked", self.on_refresh_cmdlist)
         self.cmdlist_scroll = Gtk.ScrolledWindow()
         self.cmdlist_scroll.set_vexpand(True)
