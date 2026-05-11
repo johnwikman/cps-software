@@ -1,6 +1,6 @@
 services:
   spider:
-    image: mikinglang/remote-ctrl-server:0.0.2
+    image: mikinglang/remote-ctrl-server:0.0.3
     build:
       context: ../..
       dockerfile: remote-ctrl/server/Dockerfile
